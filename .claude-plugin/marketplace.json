@@ -1,0 +1,28 @@
+{
+  "name": "oryn",
+  "owner": {
+    "name": "Oryn",
+    "url": "https://github.com/slothrulez/oryn"
+  },
+  "plugins": [
+    {
+      "name": "oryn",
+      "source": "./skills",
+      "description": "AI short-video production: a topic or product link becomes a finished vertical video (script → free stock footage → free TTS → captions → BGM → FFmpeg compose), keyless by default. Installs the oryn-video skill plus the Oryn MCP server (oryn_create_video, oryn_product_script, oryn_gate …) targeting your local Oryn instance.",
+      "version": "0.9.7",
+      "author": { "name": "Oryn" },
+      "homepage": "https://github.com/slothrulez/oryn",
+      "license": "AGPL-3.0-only",
+      "category": "media",
+      "tags": ["video", "ai-video", "short-video", "tiktok", "ecommerce", "ffmpeg", "mcp"],
+      "strict": false,
+      "skills": ["./oryn-video", "./script-judges"],
+      "mcpServers": {
+        "oryn": {
+          "command": "npx",
+          "args": ["-y", "--package", "https://github.com/slothrulez/oryn/releases/download/v0.9.7/oryn-mcp-0.1.6.tgz", "oryn-mcp"]
+        }
+      }
+    }
+  ]
+}

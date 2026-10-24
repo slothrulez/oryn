@@ -1,0 +1,116 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getDb } from "@/lib/db";
+import { assets } from "@/lib/db/schema";
+import { eq, and, desc } from "drizzle-orm";
+import { LAST_FRAME_SUFFIX } from "@/lib/video-composer/frame-extract";
+import { resolveUploadFilePath } from "@/lib/remote-image";
+import { existsSync } from "fs";
+import { persistAssetSource, saveAssetCandidate } from "@/lib/asset-persistence";
+import { sanitizeGenerationControlSummary } from "@/lib/video-repair-plan";
+
+// Get a project's generated assets (restores state on the assets page)
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const db = getDb();
+    const rows = await db.select().from(assets).where(eq(assets.projectId, id)).orderBy(desc(assets.createdAt));
+    return NextResponse.json(rows.map((row) => {
+      const tailPath = row.filePath && /\.(mp4|webm|mov|m4v)$/i.test(row.filePath)
+        ? resolveUploadFilePath(`${row.filePath}${LAST_FRAME_SUFFIX}`)
+        : null;
+      return { ...row, ...(tailPath && existsSync(tailPath) && { lastFrameUrl: `${row.filePath}${LAST_FRAME_SUFFIX}` }) };
+    }));
+  } catch (error) {
+    console.error("Failed to load assets:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to load assets" },
+      { status: 500 }
+    );
+  }
+}
+
+// Save/update a shot's asset (persisted after generation so composition reads real assets)
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await req.json();
+    const { shotId, sourceUrl } = body as { shotId?: number; sourceUrl?: string };
+
+    if (typeof shotId !== "number" || !sourceUrl) {
+      return NextResponse.json({ error: "Missing shotId or sourceUrl" }, { status: 400 });
+    }
+    // validate projectId against path traversal
+    if (!/^[a-zA-Z0-9-]+$/.test(id)) {
+      return NextResponse.json({ error: "Invalid project ID" }, { status: 400 });
+    }
+
+    const filePath = await persistAssetSource(id, sourceUrl, shotId);
+
+    const typeMap: Record<string, "ai_generated" | "product_image" | "user_upload"> = {
+      ai_generate: "ai_generated",
+      ai_generated: "ai_generated",
+      product_image: "product_image",
+      user_upload: "user_upload",
+    };
+    const assetType = typeMap[body.type] ?? "ai_generated";
+    const generationPlan = sanitizeGenerationControlSummary(body.generationPlan);
+
+    // Static keyframe (first frame) accompanying an i2v video asset: serves as the assets-page
+    // thumbnail AND as the source frame for per-shot motion re-runs / keyframe chaining — the
+    // upsert below replaces the old keyframe row entirely, so without this column the frame is
+    // unrecoverable. Local persisted paths only (the keyframe was saved as an image asset earlier).
+    const thumbnailPath =
+      typeof body.thumbnailPath === "string" && body.thumbnailPath.startsWith("/api/files/")
+        ? body.thumbnailPath
+        : undefined;
+
+    return NextResponse.json(await saveAssetCandidate({
+      projectId: id,
+      shotId,
+      type: assetType,
+      filePath,
+      thumbnailPath,
+      provider: body.provider,
+      model: body.model,
+      prompt: body.prompt,
+      generationPlan,
+    }));
+  } catch (error) {
+    console.error("Failed to save asset:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to save asset" },
+      { status: 500 }
+    );
+  }
+}
+
+/** Select an existing take as the real composition input. No media is deleted. */
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    if (!/^[a-zA-Z0-9-]+$/.test(id)) return NextResponse.json({ error: "Invalid project ID" }, { status: 400 });
+    const body = await req.json() as { assetId?: unknown };
+    if (typeof body.assetId !== "string" || !/^[a-zA-Z0-9-]+$/.test(body.assetId)) {
+      return NextResponse.json({ error: "Missing a valid assetId" }, { status: 400 });
+    }
+    const db = getDb();
+    const [target] = await db.select().from(assets).where(and(eq(assets.id, body.assetId), eq(assets.projectId, id))).limit(1);
+    if (!target || target.status !== "done") return NextResponse.json({ error: "Asset does not exist or is not ready" }, { status: 404 });
+    db.transaction((tx) => {
+      tx.update(assets).set({ selected: false }).where(and(eq(assets.projectId, id), eq(assets.shotId, target.shotId))).run();
+      tx.update(assets).set({ selected: true }).where(eq(assets.id, target.id)).run();
+    });
+    return NextResponse.json({ ...target, selected: true });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Failed to switch asset" }, { status: 500 });
+  }
+}

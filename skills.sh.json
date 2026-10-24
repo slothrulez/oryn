@@ -1,0 +1,11 @@
+{
+  "$schema": "https://skills.sh/schemas/skills.sh.schema.json",
+  "notGrouped": "bottom",
+  "groupings": [
+    {
+      "title": "Oryn — AI short-video production",
+      "description": "Topic or product link → finished vertical short video: script → free stock footage → free TTS → captions → BGM → FFmpeg compose. Keyless by default; ships with an MCP server and CLI.",
+      "skills": ["oryn-video"]
+    }
+  ]
+}

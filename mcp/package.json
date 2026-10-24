@@ -1,0 +1,42 @@
+{
+  "name": "oryn-mcp",
+  "version": "0.1.6",
+  "mcpName": "io.github.slothrulez/oryn",
+  "description": "MCP server for Oryn — drive the keyless AI commerce/short-video pipeline (create_video, generate_script, list_voices, get_video …) from any MCP client. Thin stdio wrapper over a running Oryn instance; stock + Edge-TTS are keyless, only script generation needs an LLM key.",
+  "type": "module",
+  "bin": {
+    "oryn-mcp": "oryn-mcp.mjs"
+  },
+  "files": [
+    "oryn-mcp.mjs",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "mcp-server",
+    "video",
+    "short-video",
+    "tiktok",
+    "ecommerce",
+    "ai-video",
+    "text-to-video",
+    "ffmpeg",
+    "oryn"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/slothrulez/oryn",
+    "directory": "mcp"
+  },
+  "homepage": "https://github.com/slothrulez/oryn/tree/main/mcp",
+  "bugs": "https://github.com/slothrulez/oryn/issues",
+  "license": "AGPL-3.0",
+  "author": "Oryn"
+}

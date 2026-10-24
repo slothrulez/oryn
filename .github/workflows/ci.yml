@@ -1,0 +1,52 @@
+# CI pipeline: every push / PR runs lint + unit tests + production build
+# Local equivalents: pnpm lint / pnpm test / pnpm build (all three must pass)
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# keep only the latest run per branch to save minutes
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # CI only runs lint/test/build and does not package Electron — skip the Electron binary download (~150MB) to keep installs fast
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      # the pnpm version comes from package.json packageManager; not repeated here (it would conflict)
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node 22 (with pnpm cache)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # ffmpeg-static linux-x64 static builds (johnvansickle) lack harfbuzz since FFmpeg 7.x
+      # and have no drawtext filter; install distro ffmpeg as a fallback so real drawtext render regression tests run in CI
+      - name: Install system ffmpeg (fallback for drawtext render tests)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Production build
+        run: pnpm build

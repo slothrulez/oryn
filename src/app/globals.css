@@ -1,0 +1,257 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: "Space Grotesk", var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Space Mono", var(--font-geist-mono), ui-monospace, monospace;
+  --font-heading: Anton, Impact, "Arial Narrow Bold", sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-amber: var(--amber);
+  --animate-shimmer-slide: shimmer-slide var(--speed) ease-in-out infinite alternate;
+  --animate-spin-around: spin-around calc(var(--speed) * 2) infinite linear;
+  @keyframes shimmer-slide {
+  to {
+    transform: translate(calc(100cqw - 100%), 0);
+    }
+  }
+  @keyframes spin-around {
+  0% {
+    transform: translateZ(0) rotate(0);
+    }
+  15%, 35% {
+    transform: translateZ(0) rotate(90deg);
+    }
+  65%, 85% {
+    transform: translateZ(0) rotate(270deg);
+    }
+  100% {
+    transform: translateZ(0) rotate(360deg);
+    }
+  }
+  --animate-shiny-text: shiny-text 8s infinite
+;
+  @keyframes shiny-text {
+  0%, 90%, 100% {
+    background-position: calc(-100% - var(--shiny-width)) 0;}
+  30%, 60% {
+    background-position: calc(100% + var(--shiny-width)) 0;}}}
+
+/* ==================== Theme: warm paper, ink, grey (cosmos-style monochrome) ==================== */
+:root {
+  --background: #f2f0e9;
+  --foreground: #000000;
+  --card: #ffffff;
+  --card-foreground: #000000;
+  --popover: #ffffff;
+  --popover-foreground: #000000;
+  --primary: #000000;
+  --primary-foreground: #ffffff;
+  --secondary: #ffffff;
+  --secondary-foreground: #000000;
+  --muted: #e8e5db;
+  --muted-foreground: #4d4c48;
+  --accent: #d9ff00;
+  --accent-foreground: #000000;
+  --destructive: #ff2a00;
+  --border: #000000;
+  --input: #000000;
+  --ring: #ff2a00;
+  --chart-1: #000000;
+  --chart-2: #6b6b68;
+  --chart-3: #a8a8a4;
+  --chart-4: #ff2a00;
+  --chart-5: #1d2bff;
+  --radius: 0px;
+  --sidebar: #f2f0e9;
+  --sidebar-foreground: #0a0a0a;
+  --sidebar-primary: #0a0a0a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #d9ff00;
+  --sidebar-accent-foreground: #000000;
+  --sidebar-border: #000000;
+  --sidebar-ring: #ff2a00;
+  --brand: #ff2a00;
+  --brand-foreground: #ffffff;
+  --amber: #d4a72c;
+  color-scheme: light;
+}
+
+/* The app is single-theme; `.dark` is kept as an alias so stray dark: utilities stay consistent. */
+.dark {
+  --background: #f2f0e9;
+  --foreground: #000000;
+  --card: #ffffff;
+  --card-foreground: #000000;
+  --popover: #ffffff;
+  --popover-foreground: #000000;
+  --primary: #000000;
+  --primary-foreground: #ffffff;
+  --secondary: #ffffff;
+  --secondary-foreground: #000000;
+  --muted: #e8e5db;
+  --muted-foreground: #4d4c48;
+  --accent: #d9ff00;
+  --accent-foreground: #000000;
+  --destructive: #ff2a00;
+  --border: #000000;
+  --input: #000000;
+  --ring: #ff2a00;
+  --chart-1: #000000;
+  --chart-2: #6b6b68;
+  --chart-3: #a8a8a4;
+  --chart-4: #ff2a00;
+  --chart-5: #1d2bff;
+  --sidebar: #f2f0e9;
+  --sidebar-foreground: #0a0a0a;
+  --sidebar-primary: #0a0a0a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #d9ff00;
+  --sidebar-accent-foreground: #000000;
+  --sidebar-border: #000000;
+  --sidebar-ring: #ff2a00;
+  --brand: #ff2a00;
+  --brand-foreground: #ffffff;
+  --amber: #d4a72c;
+  color-scheme: light;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* ==================== Status shades on paper ====================
+   The pages use the light status shades (amber-300/400, emerald-400 ...) that were tuned for the
+   dark studio theme. Deepen those shades so the same classes stay legible on the paper background. */
+:root:not(.dark) {
+  --color-amber-200: #a36a12;
+  --color-amber-300: #9a5f0b;
+  --color-amber-400: #8f5a0c;
+  --color-amber-500: #b7791f;
+  --color-amber-600: #8a4f0a;
+  --color-emerald-300: #1f7a53;
+  --color-emerald-400: #1b7a4f;
+  --color-emerald-500: #22915e;
+  --color-emerald-600: #1b6f48;
+  --color-green-400: #1f7a3f;
+  --color-green-500: #27913e;
+  --color-red-400: #c2402f;
+  --color-red-500: #d2473a;
+  --color-rose-400: #c23b5a;
+  --color-blue-300: #2c5fb0;
+  --color-blue-400: #2b64c4;
+  --color-blue-500: #2f6fd6;
+  --color-orange-400: #b25a12;
+  --color-orange-500: #c76a1f;
+  --color-sky-400: #2374a6;
+  --color-violet-400: #5a4bb0;
+  --color-purple-400: #6a4bb0;
+  --color-cyan-400: #0e7490;
+}
+
+/* ==================== Typography: brutalist display + grotesk body ==================== */
+h1, h2, .heading-tight {
+  font-family: var(--font-heading);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  line-height: 0.95;
+}
+h3 { letter-spacing: -0.01em; font-weight: 700; }
+.font-heading { font-family: var(--font-heading); font-weight: 400; }
+/* ==================== Brand (red block) ==================== */
+.brand-gradient { background: #ff2a00; color: #ffffff; }
+.brand-gradient-text { color: #ff2a00; }
+/* ==================== Hard edges everywhere ==================== */
+.rounded-full, [class*="rounded-["] { border-radius: 0 !important; }
+.animate-spin.rounded-full { border-radius: 9999px !important; }
+/* ==================== Cards: 3px rule + offset shadow ==================== */
+.glass-card,
+.dark .glass-card,
+[data-slot="card"] {
+  background: #ffffff;
+  border: 3px solid #000;
+  border-radius: 0;
+  box-shadow: 6px 6px 0 #000;
+  --tw-ring-shadow: 0 0 #0000;
+}
+/* ==================== Buttons ==================== */
+[data-slot="button"] {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+[data-slot="button"].bg-primary {
+  border: 2px solid #000;
+  box-shadow: 4px 4px 0 #ff2a00;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+[data-slot="button"].bg-primary:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #ff2a00; }
+/* ==================== Inputs ==================== */
+[data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"] {
+  background: #ffffff;
+  border: 2px solid #000;
+  border-radius: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+/* ==================== Page background: grid paper ==================== */
+body {
+  background-color: #f2f0e9;
+  background-image: linear-gradient(rgba(0, 0, 0, 0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 0, 0, 0.07) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.grid-bg, .dark .grid-bg { background-color: transparent; background-image: none; }
+::selection { background: #d9ff00; color: #000; }
+/* ==================== Selection highlight ==================== */
+.neon-glow, .dark .neon-glow { box-shadow: 0 0 0 3px #000, 6px 6px 0 #ff2a00; }

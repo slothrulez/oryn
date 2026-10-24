@@ -1,0 +1,95 @@
+# Release pipeline: pushing a vX.Y.Z tag builds desktop installers on mac + windows + linux runners
+# and uploads the .dmg / .exe / .AppImage to the matching GitHub Release (one-click download for users);
+# it also produces oryn-skill.zip (the zip root is the skill folder, ready to upload to the claude.ai Skills panel).
+name: Release Desktop
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # needed to create the Release / upload artifacts
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false # one platform failing does not stop the others
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node 22 (with pnpm cache)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # note: do NOT skip the electron binary download here — packaging needs it
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build desktop installers (mac=.dmg / win=.exe / linux=.AppImage)
+        run: pnpm dist
+
+      - name: Upload installers to the Release (draft; publish after reviewing artifacts)
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/*.dmg
+            release/*.exe
+            release/*.AppImage
+          fail_on_unmatched_files: false
+          draft: true
+          # release notes; branding is Oryn, data directory matches build.productName
+          body: |
+            Oryn Desktop — double-click to run. FFmpeg / SQLite bundled, no Node install required.
+
+            - **macOS (Apple Silicon)**: download the `.dmg`. Unsigned — on first launch, right-click → "Open" to bypass Gatekeeper.
+            - **Windows (x64)**: download the `.exe` installer. Unsigned — if SmartScreen appears, click "More info → Run anyway". ⚠️ Auto-built and untested — feedback welcome.
+            - **Linux (x64)**: download the `.AppImage`, `chmod +x` it and run. ⚠️ Auto-built and untested — feedback welcome.
+
+            On first launch, app data is stored under your user directory (macOS: `~/Library/Application Support/Oryn`).
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Agent-skill bundle for claude.ai: the zip root must be the skill folder itself
+  # (oryn-video/SKILL.md), matching claude.ai's upload requirement.
+  skill-bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Package agent skills (oryn-skill.zip + oryn-script-judges.zip)
+        run: |
+          cd skills
+          zip -r ../oryn-skill.zip oryn-video
+          zip -r ../oryn-script-judges.zip script-judges
+
+      - name: Package the MCP bundle
+        working-directory: mcp
+        run: npm pack --ignore-scripts --pack-destination ..
+
+      - name: Upload skill and MCP bundles to the Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            oryn-skill.zip
+            oryn-script-judges.zip
+            oryn-mcp-*.tgz
+          fail_on_unmatched_files: true
+          draft: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

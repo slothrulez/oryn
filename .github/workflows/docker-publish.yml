@@ -1,0 +1,88 @@
+# Build Oryn as a self-hosted Docker image and publish it to GitHub Container Registry (ghcr.io) after a smoke test.
+# Trigger: publishing a Release produces vX.Y.Z + latest; can also be run manually via workflow_dispatch.
+# The image then appears on the repo Packages page: ghcr.io/slothrulez/oryn
+name: Publish Docker image (ghcr.io)
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write # needed to push to ghcr
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 1) build and load into the local docker for a pre-push smoke test
+      - name: Build image (load locally for testing)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: oryn:smoke
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # 2) smoke test: start the container and confirm startup + DB migration + landing page 200 + ffmpeg available
+      - name: Smoke test (startup / page reachable / ffmpeg)
+        run: |
+          docker run -d -p 3000:3000 --name smoke oryn:smoke
+          for i in $(seq 1 40); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/start || true)
+            [ "$code" = "200" ] && break
+            sleep 2
+          done
+          echo "--- container logs ---"; docker logs smoke 2>&1 | tail -30
+          final=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/start || true)
+          echo "final /start = $final"
+          [ "$final" = "200" ] || { echo "::error::Smoke test failed: /start did not return 200"; exit 1; }
+          docker exec smoke ffmpeg -version | head -1
+          # the drawtext filter must exist (burned captions/price tags/covers/carousels all depend on it): ffmpeg-static 7.x
+          # linux static builds lack harfbuzz and drawtext, which once let a broken image pass a -version-only smoke test
+          docker exec smoke sh -c "ffmpeg -hide_banner -filters | grep -q ' drawtext '" \
+            || { echo "::error::Smoke test failed: ffmpeg is missing the drawtext filter (captions/text compositing would break)"; exit 1; }
+          docker rm -f smoke
+
+      # 3) tests passed → log in + tag + push (reuses the build cache, takes seconds)
+      - name: Log in to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate image tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,format=short
+
+      - name: Build and push (linux/amd64)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
